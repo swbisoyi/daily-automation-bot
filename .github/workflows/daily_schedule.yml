@@ -1,0 +1,32 @@
+name: Daily Automation 4:30 PM IST
+
+on:
+  schedule:
+    # 4:30 PM IST = 11:00 AM UTC
+    - cron: '0 11 * * *'
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  run-automation:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Compile Code
+      run: |
+        mkdir -p bin
+        javac -d bin -cp "libs/*" src/*.java
+
+    - name: Run Engine
+      env: 
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      run: |
+        java -cp "bin:libs/*" Engine
