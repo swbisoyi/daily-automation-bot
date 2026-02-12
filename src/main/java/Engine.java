@@ -15,9 +15,9 @@ import java.util.regex.Pattern;
 public class Engine {
 
     static final List<TestConfig> TEST_CONFIGS = Arrays.asList(
-            new TestConfig("page_objects1.json", "test_scenario1.txt"),
-            new TestConfig("page_objects2.json", "test_scenario2.txt"),
-            new TestConfig("page_objects3.json", "test_scenario3.txt")
+            new TestConfig("HotKeySelect.json", "HotKeySelect.txt"),
+            new TestConfig("login.json", "login.txt"),
+            new TestConfig("page_objects.json", "test_scenario.txt")
     );
 
     public static void main(String[] args) {
