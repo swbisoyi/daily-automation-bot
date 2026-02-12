@@ -2,14 +2,8 @@ name: Daily Automation 6:45 PM IST
 
 on:
   schedule:
-    # -------------------------------------------------------
-    # CRON SCHEDULE:
     # 6:45 PM IST = 13:15 UTC
-    # Format: 'Minute Hour Day Month DayOfWeek'
-    # -------------------------------------------------------
     - cron: '15 13 * * *'
-
-  # Allows manual trigger
   workflow_dispatch:
 
 jobs:
@@ -31,10 +25,13 @@ jobs:
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
+          echo "📂 Debug: Listing resource files to ensure they exist..."
+          ls -R src/main/resources || echo "⚠️ Resources folder not found!"
+          
           echo "📂 Compiling project..."
-          # 1. Download libraries and compile
+          # Clean and Compile (this copies resources to target/classes)
           mvn clean compile
           
           echo "🚀 Starting Engine..."
-          # 2. Run the main class directly (No JAR file needed)
+          # Executing the main class
           mvn exec:java -Dexec.mainClass="Engine" -Dexec.classpathScope="compile"
