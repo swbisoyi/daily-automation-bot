@@ -1,10 +1,16 @@
-name: Daily Automation 4:30 PM IST
+name: Daily Automation 6:30 PM IST
 
 on:
   schedule:
-# 6:30 PM IST = 1:00 PM UTC
+    # -------------------------------------------------------
+    # CRON EXPLANATION:
+    # 6:30 PM IST = 13:00 UTC (1:00 PM UTC)
+    # Format: 'Minute Hour Day Month DayOfWeek'
+    # -------------------------------------------------------
     - cron: '0 13 * * *'
-    workflow_dispatch: # Allows manual trigger
+
+  # Allows you to run this workflow manually from the Actions tab anytime
+  workflow_dispatch:
 
 jobs:
   run-automation:
@@ -23,10 +29,13 @@ jobs:
     - name: Compile Code
       run: |
         mkdir -p bin
+        # Compile all Java files in src, using libraries in libs
         javac -d bin -cp "libs/*" src/*.java
 
     - name: Run Engine
-      env: 
+      env:
+        # This pulls the secret you added in Settings > Secrets
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       run: |
+        # Run the Engine class with the classpath including bin and libs
         java -cp "bin:libs/*" Engine
