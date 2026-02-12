@@ -2,9 +2,9 @@ name: Daily Automation 4:30 PM IST
 
 on:
   schedule:
-    # 4:30 PM IST = 11:00 AM UTC
-    - cron: '0 11 * * *'
-  workflow_dispatch: # Allows manual trigger
+# 6:30 PM IST = 1:00 PM UTC
+    - cron: '0 13 * * *'
+    workflow_dispatch: # Allows manual trigger
 
 jobs:
   run-automation:
