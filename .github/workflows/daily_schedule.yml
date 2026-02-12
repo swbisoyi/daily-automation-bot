@@ -3,9 +3,8 @@ name: Daily Automation 6:30 PM IST
 on:
   schedule:
     # -------------------------------------------------------
-    # CRON EXPLANATION:
+    # CRON SCHEDULE:
     # 6:30 PM IST = 13:00 UTC (1:00 PM UTC)
-    # Format: 'Minute Hour Day Month DayOfWeek'
     # -------------------------------------------------------
     - cron: '0 13 * * *'
 
@@ -28,14 +27,22 @@ jobs:
 
     - name: Compile Code
       run: |
+        echo "📂 Creating bin folder..."
         mkdir -p bin
-        # Compile all Java files in src, using libraries in libs
-        javac -d bin -cp "libs/*" src/*.java
+        
+        echo "🔍 Finding all Java files..."
+        # This command finds Engine.java and ActionLibrary.java wherever they are
+        find . -name "*.java" > sources.txt
+        
+        echo "☕ Compiling..."
+        # Compiles the files found in sources.txt
+        javac -d bin -cp "libs/*" @sources.txt
 
     - name: Run Engine
       env:
         # This pulls the secret you added in Settings > Secrets
         SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
       run: |
-        # Run the Engine class with the classpath including bin and libs
+        echo "🚀 Starting Automation..."
+        # Runs the Engine class with the classpath including bin and libs
         java -cp "bin:libs/*" Engine
