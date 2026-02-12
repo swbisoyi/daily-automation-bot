@@ -1,12 +1,13 @@
-name: Daily Automation 6:30 PM IST
+name: Daily Automation 6:45 PM IST
 
 on:
   schedule:
     # -------------------------------------------------------
     # CRON SCHEDULE:
-    # 6:30 PM IST = 13:00 UTC (1:00 PM UTC)
+    # 6:45 PM IST = 13:15 UTC
+    # Format: 'Minute Hour Day Month DayOfWeek'
     # -------------------------------------------------------
-    - cron: '0 13 * * *'
+    - cron: '15 13 * * *'
 
   # Allows you to run this workflow manually from the Actions tab anytime
   workflow_dispatch:
@@ -16,33 +17,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'maven' # Speeds up future runs by caching dependencies
 
-    - name: Compile Code
-      run: |
-        echo "📂 Creating bin folder..."
-        mkdir -p bin
-        
-        echo "🔍 Finding all Java files..."
-        # This command finds Engine.java and ActionLibrary.java wherever they are
-        find . -name "*.java" > sources.txt
-        
-        echo "☕ Compiling..."
-        # Compiles the files found in sources.txt
-        javac -d bin -cp "libs/*" @sources.txt
-
-    - name: Run Engine
-      env:
-        # This pulls the secret you added in Settings > Secrets
-        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-      run: |
-        echo "🚀 Starting Automation..."
-        # Runs the Engine class with the classpath including bin and libs
-        java -cp "bin:libs/*" Engine
+      - name: Build and Run with Maven
+        env:
+          # Pulls the secret from Settings > Secrets and variables > Actions
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          echo "📂 Compiling project and downloading libraries..."
+          # Clean and compile (Maven handles all JAR files automatically)
+          mvn clean compile
+          
+          echo "🚀 Starting Parallel Engine..."
+          # Runs the Engine class
+          mvn exec:java -Dexec.mainClass="Engine" -Dexec.classpathScope="compile"
