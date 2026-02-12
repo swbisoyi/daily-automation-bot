@@ -1,0 +1,6 @@
+{
+  "Login_Maybe_Later": "xpath=//a[contains(text(),'Maybe Later')] | //div[contains(@class,'login')]//span[contains(text(),'Maybe')]",
+  "Search_Box": "xpath=//input[@id='main-search' or @aria-label='Search']",
+  "Auto_Suggest_Result": "xpath=//ul[contains(@class,'autosuggest')]//li[contains(., 'Restaurants')]",
+  "First_Listing_Title": "xpath=(//div[contains(@id, 'bcard')])[1]//h2 | (//div[contains(@class, 'result')]//h2)[1]"
+}

@@ -1,0 +1,13 @@
+{
+  "Mobile_Input": "xpath=(//*[contains(text(),'seamless')])[1]/following::input[1]",
+  "Login_With_OTP_Btn": "id=loginOtpTriggerBtn",
+  "OTP_Box_1": "xpath=//input[@name='o1']",
+  "OTP_Box_2": "xpath=//input[@name='o2']",
+  "OTP_Box_3": "xpath=//input[@name='o3']",
+  "OTP_Box_4": "xpath=//input[@name='o4']",
+  "OTP_Box_5": "xpath=//input[@name='o5']",
+  "OTP_Box_6": "xpath=//input[@name='o6']",
+  "Search_Box": "id=main-auto",
+  "Auto_Suggest_Result": "xpath=//div[contains(@class,'react-autosuggest')]//ul//li[1]",
+  "First_Listing_Title": "xpath=(//div[contains(@class,'resultbox_info')])[1]//h2"
+}

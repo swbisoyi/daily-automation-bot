@@ -1,0 +1,11 @@
+Open Browser
+Navigate to https://www.justdial.com/
+Wait for 3 seconds
+Tap on Login_Maybe_Later
+Wait for 1 seconds
+Type restaurants in Search_Box
+Wait for 2 seconds
+Tap on Auto_Suggest_Result
+Wait for 5 seconds
+Tap on First_Listing_Title
+Wait for 5 seconds

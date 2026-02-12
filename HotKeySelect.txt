@@ -1,0 +1,17 @@
+Open Browser
+Navigate to https://www.justdial.com/
+Wait for 5 seconds
+Type 7977184984 in Mobile_Input
+Wait for 2 seconds
+Tap on Login_With_OTP_Btn
+Wait for 5 seconds
+Type 1 in OTP_Box_1
+Type 2 in OTP_Box_2
+Type 3 in OTP_Box_3
+Type 4 in OTP_Box_4
+Type 5 in OTP_Box_5
+Type 6 in OTP_Box_6
+Wait for 8 seconds
+Tap on First_Hotkey
+Wait for 5 seconds
+Verify Result_Page_Content is visible
