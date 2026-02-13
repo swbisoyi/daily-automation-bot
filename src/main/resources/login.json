@@ -1,5 +1,5 @@
 {
-  "Mobile_Input": "xpath=(//*[contains(text(),'seamless')])[1]/following::input[1]",
+  "Mobile_Input": "(//*[contains(text(),'seamless')])[1]/following::input[1]",
   "Login_With_OTP_Btn": "id=loginOtpTriggerBtn",
   "OTP_Box_1": "xpath=//input[@name='o1']",
   "OTP_Box_2": "xpath=//input[@name='o2']",

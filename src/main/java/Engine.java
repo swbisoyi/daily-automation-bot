@@ -23,12 +23,11 @@ public class Engine {
     );
 
     public static void main(String[] args) {
-        System.out.println("🚀 GitHub Actions Triggered Execution at " + LocalDateTime.now());
+        System.out.println("🚀 Execution Started at " + LocalDateTime.now());
         triggerParallelTests();
     }
 
     public static void triggerParallelTests() {
-        // Reduced to 2 threads to avoid crashing GitHub Actions (Standard runners have 2 vCPUs)
         ExecutorService parallelExecutor = Executors.newFixedThreadPool(2);
 
         for (TestConfig config : TEST_CONFIGS) {
@@ -54,26 +53,19 @@ public class Engine {
             System.out.println("🧵 Starting: " + config.scenarioFile);
             ObjectMapper mapper = new ObjectMapper();
 
-            // 1. LOAD CONFIG (JSON) from Classpath/Resources
             try (InputStream jsonStream = Engine.class.getClassLoader().getResourceAsStream(config.jsonFile)) {
-                if (jsonStream == null) {
-                    throw new RuntimeException("❌ ERROR: Could not find " + config.jsonFile + " in src/main/resources/");
-                }
+                if (jsonStream == null) throw new RuntimeException("❌ ERROR: Could not find " + config.jsonFile);
                 pageObjects = mapper.readTree(jsonStream);
             }
 
-            // 2. LOAD SCENARIO (TXT) from Classpath/Resources
             List<String> steps;
             try (InputStream txtStream = Engine.class.getClassLoader().getResourceAsStream(config.scenarioFile)) {
-                if (txtStream == null) {
-                    throw new RuntimeException("❌ ERROR: Could not find " + config.scenarioFile + " in src/main/resources/");
-                }
+                if (txtStream == null) throw new RuntimeException("❌ ERROR: Could not find " + config.scenarioFile);
                 try (BufferedReader reader = new BufferedReader(new InputStreamReader(txtStream))) {
                     steps = reader.lines().collect(Collectors.toList());
                 }
             }
 
-            // 3. EXECUTE TEST
             actionLib.openBrowser();
 
             for (String step : steps) {
