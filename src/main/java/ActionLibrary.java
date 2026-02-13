@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.time.Duration;
+import java.util.Collections;
 
 public class ActionLibrary {
     public WebDriver driver;
@@ -25,17 +26,27 @@ public class ActionLibrary {
             options.addArguments("--disable-gpu");
             options.addArguments("--no-sandbox");
             options.addArguments("--disable-dev-shm-usage");
+
+            // 🛡️ ANTI-BOT BYPASS: Disguise the headless browser
+            // 1. Fake a real Windows User-Agent (Removes "HeadlessChrome" from the signature)
+            options.addArguments("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+            // 2. Hide the webdriver flag from JavaScript
+            options.addArguments("--disable-blink-features=AutomationControlled");
         } else {
             System.out.println("💻 LOCAL MODE DETECTED: Opening Chrome UI");
-            // No headless argument added! You will see the browser.
         }
 
         // Standard options for both
         options.addArguments("--window-size=1920,1080");
         options.addArguments("--remote-allow-origins=*");
+        // Removes the "Chrome is being controlled by automated software" banner
+        options.setExperimentalOption("excludeSwitches", Collections.singletonList("enable-automation"));
+        options.setExperimentalOption("useAutomationExtension", false);
 
         driver = new ChromeDriver(options);
-        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(10));
+        // Delete cookies to ensure a fresh session
+        driver.manage().deleteAllCookies();
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(15)); // Increased to 15s for slower CI servers
     }
 
     public void closeBrowser() { if (driver != null) driver.quit(); }
