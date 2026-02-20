@@ -1,0 +1,5 @@
+# Step 1: Wait for 5 seconds to let the app fully load and reach the Home Page
+Wait for 5
+
+# Step 2: Tap on the Home Tab button using the locator from the JSON file
+Tap on HomeTabButton

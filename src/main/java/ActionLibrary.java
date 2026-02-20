@@ -1,102 +1,152 @@
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import io.appium.java_client.AppiumBy;
+import io.appium.java_client.ios.IOSDriver;
+import io.appium.java_client.ios.options.XCUITestOptions;
+
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.time.Duration;
-import java.util.Collections;
 
 public class ActionLibrary {
     public WebDriver driver;
+    private WebDriverWait wait;
 
-    // 🔒 SECURE: Reads from Environment Variables (IntelliJ or GitHub)
-    private final String SLACK_WEBHOOK = System.getenv("SLACK_WEBHOOK_URL");
-
+    // ==========================================
+    // 🌐 1. WEB SETUP
+    // ==========================================
     public void openBrowser() {
+        System.out.println("   🌐 Launching Chrome...");
         ChromeOptions options = new ChromeOptions();
-
-        // 🧠 SMART TOGGLE: Check if we are running on GitHub Actions
-        String isGitHub = System.getenv("GITHUB_ACTIONS");
-
-        if (isGitHub != null && isGitHub.equals("true")) {
-            System.out.println("☁️ SERVER MODE DETECTED: Running Chrome Headless");
-            options.addArguments("--headless=new");
-            options.addArguments("--disable-gpu");
-            options.addArguments("--no-sandbox");
-            options.addArguments("--disable-dev-shm-usage");
-
-            // 🛡️ ANTI-BOT BYPASS: Disguise the headless browser
-            // 1. Fake a real Windows User-Agent (Removes "HeadlessChrome" from the signature)
-            options.addArguments("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-            // 2. Hide the webdriver flag from JavaScript
-            options.addArguments("--disable-blink-features=AutomationControlled");
-        } else {
-            System.out.println("💻 LOCAL MODE DETECTED: Opening Chrome UI");
-        }
-
-        // Standard options for both
-        options.addArguments("--window-size=1920,1080");
         options.addArguments("--remote-allow-origins=*");
-        // Removes the "Chrome is being controlled by automated software" banner
-        options.setExperimentalOption("excludeSwitches", Collections.singletonList("enable-automation"));
-        options.setExperimentalOption("useAutomationExtension", false);
-
+        options.addArguments("--start-maximized");
         driver = new ChromeDriver(options);
-        // Delete cookies to ensure a fresh session
-        driver.manage().deleteAllCookies();
-        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(15)); // Increased to 15s for slower CI servers
+        initWait();
     }
 
-    public void closeBrowser() { if (driver != null) driver.quit(); }
+    // ==========================================
+    // 📲 2. iOS REAL DEVICE SETUP
+    // ==========================================
+    public void openIOSRealDevice() throws Exception {
+        System.out.println("   📲 Connecting to Real iPhone...");
+        XCUITestOptions options = new XCUITestOptions();
+        options.setPlatformName("iOS");
+        options.setAutomationName("XCUITest");
+        options.setUdid("00008140-001259423C0B001C");
+        options.setDeviceName("iPhone");
+        options.setBundleId("com.justdial.justdialjd");
+
+        // Critical Real Device Caps
+        options.setCapability("appium:xcodeOrgId", "P6ND3CJR5D");
+        options.setCapability("appium:updatedWDABundleId", "com.swagat.WebDriverAgentRunner");
+        options.setCapability("appium:usePrebuiltWDA", true);
+        options.setCapability("appium:wdaLocalPort", 8102);
+
+        options.setNoReset(true);
+        options.setNewCommandTimeout(Duration.ofSeconds(60));
+
+        driver = new IOSDriver(new URL("http://127.0.0.1:4723/"), options);
+        initWait();
+        System.out.println("   🚀 Real Device Connected!");
+    }
+
+    // ==========================================
+    // 📱 3. iOS SIMULATOR SETUP
+    // ==========================================
+    public void openIOSSimulator() throws Exception {
+        System.out.println("   📱 Connecting to Simulator (Safari Mode)...");
+        XCUITestOptions options = new XCUITestOptions();
+        options.setDeviceName("iPhone 16e");
+        options.setAutomationName("XCUITest");
+        options.withBrowserName("Safari");
+
+        driver = new IOSDriver(new URL("http://127.0.0.1:4723/"), options);
+        initWait();
+    }
+
+    // ==========================================
+    // ⚙️ CORE ACTIONS
+    // ==========================================
+    private void initWait() {
+        driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5));
+        wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+    }
+
+    public void quit() {
+        if (driver != null) {
+            driver.quit();
+            driver = null;
+        }
+    }
+
     public void navigate(String url) { driver.get(url); }
 
-    // 🧠 SMART LOCATOR
-    private By getLocator(String locatorString) {
-        if (locatorString.startsWith("id=")) return By.id(locatorString.substring(3));
-        if (locatorString.startsWith("name=")) return By.name(locatorString.substring(5));
-        if (locatorString.startsWith("css=")) return By.cssSelector(locatorString.substring(4));
-        if (locatorString.startsWith("xpath=")) return By.xpath(locatorString.substring(6));
-        return By.xpath(locatorString); // Default
+    public void tap(String locator) {
+        System.out.println("   👆 Tapping: " + locator);
+        wait.until(ExpectedConditions.elementToBeClickable(getLocator(locator))).click();
     }
 
-    public void tap(String locator) { driver.findElement(getLocator(locator)).click(); }
-    public void type(String text, String locator) { driver.findElement(getLocator(locator)).sendKeys(text); }
+    public void type(String text, String locator) {
+        System.out.println("   ⌨️ Typing: " + text);
+        WebElement el = wait.until(ExpectedConditions.visibilityOfElementLocated(getLocator(locator)));
+        el.clear();
+        el.sendKeys(text);
+    }
 
-    public void verifyVisible(String locator) throws Exception {
-        if (!driver.findElement(getLocator(locator)).isDisplayed()) {
-            throw new Exception("Element not visible: " + locator);
-        }
+    public void verifyVisible(String locator) {
+        System.out.println("   👀 Verifying: " + locator);
+        wait.until(ExpectedConditions.visibilityOfElementLocated(getLocator(locator)));
     }
 
     public void waitFor(int seconds) {
-        try { Thread.sleep(seconds * 1000L); } catch (Exception e) {}
+        try { Thread.sleep(seconds * 1000L); } catch (InterruptedException e) {}
     }
 
+    private By getLocator(String raw) {
+        if (raw.startsWith("id=")) return By.id(raw.substring(3));
+        if (raw.startsWith("xpath=")) return By.xpath(raw.substring(6));
+        if (raw.startsWith("accessId=")) return AppiumBy.accessibilityId(raw.substring(9));
+        return By.xpath(raw);
+    }
+
+    // ==========================================
+    // 🔔 SLACK NOTIFICATION (ENV VAR)
+    // ==========================================
     public void sendSlackNotification(String message) {
-        if (SLACK_WEBHOOK == null || SLACK_WEBHOOK.trim().isEmpty()) {
-            System.out.println("⚠️ No Slack Webhook found. Skipping Slack message: " + message);
+        // 1. READ FROM ENVIRONMENT VARIABLE
+        String webhookUrl = System.getenv("SLACK_WEBHOOK_URL");
+
+        if (webhookUrl == null || webhookUrl.isEmpty()) {
+            System.err.println("   ⚠️ Slack Skipped: Env Var 'SLACK_WEBHOOK_URL' is missing.");
             return;
         }
+
         try {
-            URL url = new URL(SLACK_WEBHOOK);
+            String jsonPayload = "{\"text\": \"" + message.replace("\"", "'").replace("\n", "\\n") + "\"}";
+            URL url = new URL(webhookUrl);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setDoOutput(true);
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json");
 
-            String jsonPayload = "{\"text\": \"" + message + "\"}";
-
-            try(OutputStream os = conn.getOutputStream()) {
+            try (OutputStream os = conn.getOutputStream()) {
                 os.write(jsonPayload.getBytes("UTF-8"));
-                os.flush();
             }
-            conn.getResponseCode();
-            System.out.println("✅ Slack message sent successfully!");
+
+            int responseCode = conn.getResponseCode();
+            if (responseCode == 200) {
+                System.out.println("   🔔 Slack Notification Sent!");
+            } else {
+                System.err.println("   ❌ Slack Failed: Code " + responseCode);
+            }
         } catch (Exception e) {
-            System.err.println("❌ Failed to send Slack notification.");
-            e.printStackTrace();
+            System.err.println("   ❌ Slack Error: " + e.getMessage());
         }
     }
 }

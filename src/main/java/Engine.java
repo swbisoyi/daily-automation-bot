@@ -1,128 +1,140 @@
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class Engine {
 
     static final List<TestConfig> TEST_CONFIGS = Arrays.asList(
-            new TestConfig("HotKeySelect.json", "HotKeySelect.txt"),
-            new TestConfig("login.json", "login.txt"),
-            new TestConfig("page_objects.json", "test_scenario.txt")
+            // 🌐 WEB TESTS
+//            new TestConfig("HotKeySelect.json", "HotKeySelect.txt", "WEB"),
+//            new TestConfig("login.json", "login.txt", "WEB"),
+//            new TestConfig("page_objects.json", "test_scenario.txt", "WEB")
+
+            // 📱 iOS TEST (Uncomment when needed)
+             new TestConfig("ios_login.json", "ios_login.txt", "IOS_REAL_DEVICE")
     );
 
     public static void main(String[] args) {
-        System.out.println("🚀 Execution Started at " + LocalDateTime.now());
-        triggerParallelTests();
-    }
-
-    public static void triggerParallelTests() {
-        ExecutorService parallelExecutor = Executors.newFixedThreadPool(2);
-
+        System.out.println("🚀 Engine Started at " + LocalDateTime.now());
         for (TestConfig config : TEST_CONFIGS) {
-            parallelExecutor.execute(() -> runFullTest(config));
+            runFullTest(config);
         }
-
-        parallelExecutor.shutdown();
-        try {
-            if (!parallelExecutor.awaitTermination(15, TimeUnit.MINUTES)) {
-                parallelExecutor.shutdownNow();
-            }
-        } catch (InterruptedException e) {
-            parallelExecutor.shutdownNow();
-        }
+        System.out.println("🏁 Execution Finished.");
     }
 
     public static void runFullTest(TestConfig config) {
         ActionLibrary actionLib = new ActionLibrary();
-        JsonNode pageObjects;
         String currentStep = "Initialization";
 
         try {
-            System.out.println("🧵 Starting: " + config.scenarioFile);
-            ObjectMapper mapper = new ObjectMapper();
+            System.out.println("--------------------------------------------------");
+            System.out.println("🧵 Starting Scenario: " + config.scenarioFile + " [" + config.platform + "]");
 
-            try (InputStream jsonStream = Engine.class.getClassLoader().getResourceAsStream(config.jsonFile)) {
-                if (jsonStream == null) throw new RuntimeException("❌ ERROR: Could not find " + config.jsonFile);
-                pageObjects = mapper.readTree(jsonStream);
+            // 1. Load Data
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode pageObjects;
+            try (InputStream is = Engine.class.getClassLoader().getResourceAsStream(config.jsonFile)) {
+                if (is == null) throw new RuntimeException("❌ JSON File Not Found: " + config.jsonFile);
+                pageObjects = mapper.readTree(is);
             }
 
             List<String> steps;
-            try (InputStream txtStream = Engine.class.getClassLoader().getResourceAsStream(config.scenarioFile)) {
-                if (txtStream == null) throw new RuntimeException("❌ ERROR: Could not find " + config.scenarioFile);
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(txtStream))) {
+            try (InputStream is = Engine.class.getClassLoader().getResourceAsStream(config.scenarioFile)) {
+                if (is == null) throw new RuntimeException("❌ Scenario File Not Found: " + config.scenarioFile);
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
                     steps = reader.lines().collect(Collectors.toList());
                 }
             }
 
-            actionLib.openBrowser();
+            // 2. Launch Driver
+            if (config.platform.equalsIgnoreCase("WEB")) {
+                actionLib.openBrowser();
+            } else if (config.platform.equalsIgnoreCase("IOS_REAL_DEVICE")) {
+                actionLib.openIOSRealDevice();
+            } else if (config.platform.equalsIgnoreCase("IOS_SIMULATOR")) {
+                actionLib.openIOSSimulator();
+            }
 
+            // 3. Execute Steps
             for (String step : steps) {
-                if (step.trim().isEmpty() || step.startsWith("#")) continue;
+                if (step.trim().isEmpty() || step.startsWith("#") || step.startsWith("//")) continue;
+
                 currentStep = step.trim();
                 executeStep(actionLib, pageObjects, currentStep);
             }
 
-            System.out.println("✅ PASSED: " + config.scenarioFile);
-            actionLib.sendSlackNotification("✅ PASSED: " + config.scenarioFile);
+            // ✅ SUCCESS
+            String msg = "✅ PASSED: " + config.scenarioFile;
+            System.out.println(msg);
+            actionLib.sendSlackNotification(msg);
 
         } catch (Exception e) {
-            System.out.println("🚨 FAILED: " + config.scenarioFile + " at step: [" + currentStep + "]");
-            e.printStackTrace();
-            actionLib.sendSlackNotification("🚨 FAILED: " + config.scenarioFile + " | Step: " + currentStep);
+            // 🚨 FAILURE
+            String msg = "🚨 FAILED: " + config.scenarioFile + " | Step: [" + currentStep + "]\nError: " + e.getMessage();
+            System.err.println(msg);
+            actionLib.sendSlackNotification(msg);
         } finally {
-            actionLib.closeBrowser();
+            actionLib.quit();
         }
     }
 
-    public static void executeStep(ActionLibrary actionLib, JsonNode pageObjects, String step) throws Exception {
-        if (step.equalsIgnoreCase("Open Browser")) return;
-
-        Matcher navMatch = Pattern.compile("Navigate to (.*)").matcher(step);
-        if (navMatch.find()) { actionLib.navigate(navMatch.group(1)); return; }
-
-        Matcher verifyMatch = Pattern.compile("Verify (.*) is visible").matcher(step);
-        if (verifyMatch.find()) {
-            String name = verifyMatch.group(1).trim();
-            if (pageObjects.get(name) == null) throw new Exception("Object '" + name + "' not found in JSON.");
-            actionLib.verifyVisible(pageObjects.get(name).asText());
+    public static void executeStep(ActionLibrary lib, JsonNode pageObjects, String step) throws Exception {
+        // 🛠️ FIX: Catch "Open Browser" here and do nothing (Success)
+        if (step.equalsIgnoreCase("Open Browser")) {
+            System.out.println("   ℹ️ Skipping 'Open Browser' step (Already launched)");
             return;
         }
 
-        Matcher tapMatch = Pattern.compile("Tap on (.*)").matcher(step);
-        if (tapMatch.find()) {
-            String name = tapMatch.group(1).trim();
-            if (pageObjects.get(name) == null) throw new Exception("Object '" + name + "' not found in JSON.");
-            actionLib.tap(pageObjects.get(name).asText());
+        // 1. Navigation
+        if (step.startsWith("Navigate to")) {
+            lib.navigate(step.substring(12).trim());
             return;
         }
 
-        Matcher typeMatch = Pattern.compile("Type (.*) in (.*)").matcher(step);
-        if (typeMatch.find()) {
-            String text = typeMatch.group(1).trim();
-            String name = typeMatch.group(2).trim();
-            if (pageObjects.get(name) == null) throw new Exception("Object '" + name + "' not found in JSON.");
-            actionLib.type(text, pageObjects.get(name).asText());
+        // 2. Wait
+        if (step.startsWith("Wait for")) {
+            lib.waitFor(Integer.parseInt(step.replaceAll("\\D", "")));
             return;
         }
 
-        Matcher waitMatch = Pattern.compile("Wait for (\\d+) seconds").matcher(step);
-        if (waitMatch.find()) { actionLib.waitFor(Integer.parseInt(waitMatch.group(1))); return; }
+        // 3. Tap / Click
+        if (step.startsWith("Tap on") || step.startsWith("Click on")) {
+            String obj = step.replace("Tap on", "").replace("Click on", "").trim();
+            lib.tap(getObj(pageObjects, obj));
+            return;
+        }
+
+        // 4. Type
+        if (step.startsWith("Type")) {
+            String text = step.split(" in ")[0].substring(5);
+            String obj = step.split(" in ")[1].trim();
+            lib.type(text, getObj(pageObjects, obj));
+            return;
+        }
+
+        // 5. Verify
+        if (step.startsWith("Verify")) {
+            String obj = step.substring(7).replace(" is visible", "").trim();
+            lib.verifyVisible(getObj(pageObjects, obj));
+            return;
+        }
+
+        throw new Exception("Unknown Command: " + step);
+    }
+
+    private static String getObj(JsonNode pageObjects, String key) throws Exception {
+        if (!pageObjects.has(key)) throw new Exception("Object '" + key + "' not found in JSON.");
+        return pageObjects.get(key).asText();
     }
 
     static class TestConfig {
-        String jsonFile, scenarioFile;
-        TestConfig(String json, String scenario) { this.jsonFile = json; this.scenarioFile = scenario; }
+        String jsonFile, scenarioFile, platform;
+        TestConfig(String j, String s, String p) { jsonFile=j; scenarioFile=s; platform=p; }
     }
 }

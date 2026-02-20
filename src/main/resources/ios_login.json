@@ -1,0 +1,4 @@
+{
+  "HomeTabButton": "xpath=//XCUIElementTypeButton[@name='Home Tab']",
+  "HomeTabButton_Fast": "accessId=Home Tab"
+}
