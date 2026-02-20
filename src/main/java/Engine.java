@@ -10,14 +10,15 @@ import java.util.stream.Collectors;
 
 public class Engine {
 
+    // 🧠 CONFIGURATION: Toggle your tests here
     static final List<TestConfig> TEST_CONFIGS = Arrays.asList(
             // 🌐 WEB TESTS
-//            new TestConfig("HotKeySelect.json", "HotKeySelect.txt", "WEB"),
-//            new TestConfig("login.json", "login.txt", "WEB"),
-//            new TestConfig("page_objects.json", "test_scenario.txt", "WEB")
+            // new TestConfig("HotKeySelect.json", "HotKeySelect.txt", "WEB"),
+            // new TestConfig("login.json", "login.txt", "WEB"),
+            // new TestConfig("page_objects.json", "test_scenario.txt", "WEB"),
 
-            // 📱 iOS TEST (Uncomment when needed)
-             new TestConfig("ios_login.json", "ios_login.txt", "IOS_REAL_DEVICE")
+            // 📱 iOS REAL DEVICE TEST
+            new TestConfig("ios_login.json", "ios_login.txt", "IOS_REAL_DEVICE")
     );
 
     public static void main(String[] args) {
@@ -61,7 +62,10 @@ public class Engine {
                 actionLib.openIOSSimulator();
             }
 
-            // 3. Execute Steps
+            // 🎥 3. START RECORDING
+            actionLib.startRecording();
+
+            // 4. Execute Steps
             for (String step : steps) {
                 if (step.trim().isEmpty() || step.startsWith("#") || step.startsWith("//")) continue;
 
@@ -80,37 +84,36 @@ public class Engine {
             System.err.println(msg);
             actionLib.sendSlackNotification(msg);
         } finally {
+            // 🎥 5. STOP RECORDING & SAVE
+            actionLib.stopRecording(config.scenarioFile);
+
             actionLib.quit();
         }
     }
 
     public static void executeStep(ActionLibrary lib, JsonNode pageObjects, String step) throws Exception {
-        // 🛠️ FIX: Catch "Open Browser" here and do nothing (Success)
+        // Skip explicit browser opening
         if (step.equalsIgnoreCase("Open Browser")) {
             System.out.println("   ℹ️ Skipping 'Open Browser' step (Already launched)");
             return;
         }
 
-        // 1. Navigation
         if (step.startsWith("Navigate to")) {
             lib.navigate(step.substring(12).trim());
             return;
         }
 
-        // 2. Wait
         if (step.startsWith("Wait for")) {
             lib.waitFor(Integer.parseInt(step.replaceAll("\\D", "")));
             return;
         }
 
-        // 3. Tap / Click
         if (step.startsWith("Tap on") || step.startsWith("Click on")) {
             String obj = step.replace("Tap on", "").replace("Click on", "").trim();
             lib.tap(getObj(pageObjects, obj));
             return;
         }
 
-        // 4. Type
         if (step.startsWith("Type")) {
             String text = step.split(" in ")[0].substring(5);
             String obj = step.split(" in ")[1].trim();
@@ -118,7 +121,6 @@ public class Engine {
             return;
         }
 
-        // 5. Verify
         if (step.startsWith("Verify")) {
             String obj = step.substring(7).replace(" is visible", "").trim();
             lib.verifyVisible(getObj(pageObjects, obj));

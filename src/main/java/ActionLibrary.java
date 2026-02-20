@@ -9,17 +9,42 @@ import io.appium.java_client.AppiumBy;
 import io.appium.java_client.ios.IOSDriver;
 import io.appium.java_client.ios.options.XCUITestOptions;
 
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
+import java.util.Base64;
+import java.util.Properties;
 
 public class ActionLibrary {
     public WebDriver driver;
     private WebDriverWait wait;
+    private Properties configProps;
+
+    public ActionLibrary() {
+        loadConfig();
+    }
 
     // ==========================================
-    // 🌐 1. WEB SETUP
+    // 📂 CONFIG LOADER
+    // ==========================================
+    private void loadConfig() {
+        configProps = new Properties();
+        try (InputStream input = ActionLibrary.class.getClassLoader().getResourceAsStream("config.properties")) {
+            if (input != null) {
+                configProps.load(input);
+            }
+        } catch (Exception e) {
+            System.out.println("⚠️ Warning: config.properties issue - " + e.getMessage());
+        }
+    }
+
+    // ==========================================
+    // 🌐 1. WEB SETUP (Chrome)
     // ==========================================
     public void openBrowser() {
         System.out.println("   🌐 Launching Chrome...");
@@ -35,17 +60,20 @@ public class ActionLibrary {
     // ==========================================
     public void openIOSRealDevice() throws Exception {
         System.out.println("   📲 Connecting to Real iPhone...");
+
         XCUITestOptions options = new XCUITestOptions();
         options.setPlatformName("iOS");
         options.setAutomationName("XCUITest");
+
         options.setUdid("00008140-001259423C0B001C");
         options.setDeviceName("iPhone");
         options.setBundleId("com.justdial.justdialjd");
 
-        // Critical Real Device Caps
+        // 🔐 Security & WebDriverAgent Settings
         options.setCapability("appium:xcodeOrgId", "P6ND3CJR5D");
+        options.setCapability("appium:xcodeSigningId", "iPhone Developer");
         options.setCapability("appium:updatedWDABundleId", "com.swagat.WebDriverAgentRunner");
-        options.setCapability("appium:usePrebuiltWDA", true);
+        options.setCapability("appium:usePrebuiltWDA", false); // Set to TRUE after your first successful run
         options.setCapability("appium:wdaLocalPort", 8102);
 
         options.setNoReset(true);
@@ -57,7 +85,7 @@ public class ActionLibrary {
     }
 
     // ==========================================
-    // 📱 3. iOS SIMULATOR SETUP
+    // 📱 3. iOS SIMULATOR SETUP (Safari Fallback)
     // ==========================================
     public void openIOSSimulator() throws Exception {
         System.out.println("   📱 Connecting to Simulator (Safari Mode)...");
@@ -71,11 +99,43 @@ public class ActionLibrary {
     }
 
     // ==========================================
+    // 🎥 4. VIDEO RECORDING
+    // ==========================================
+    public void startRecording() {
+        if (driver instanceof IOSDriver) {
+            System.out.println("   🎥 Started iOS Screen Recording...");
+            ((IOSDriver) driver).startRecordingScreen();
+        } else {
+            System.out.println("   🎥 (Web Video Recording skipped - Requires Monte Media Library)");
+        }
+    }
+
+    public void stopRecording(String scenarioName) {
+        if (driver instanceof IOSDriver) {
+            System.out.println("   💾 Stopping recording and saving video...");
+            try {
+                String base64Video = ((IOSDriver) driver).stopRecordingScreen();
+                byte[] decodedVideo = Base64.getDecoder().decode(base64Video);
+
+                // Save to target folder
+                String fileName = scenarioName.replace(".txt", "") + "_TestVideo.mp4";
+                Path path = Paths.get("target/" + fileName);
+                Files.createDirectories(path.getParent()); // Ensure directory exists
+                Files.write(path, decodedVideo);
+
+                System.out.println("   ✅ Video saved successfully: " + path.toAbsolutePath());
+            } catch (Exception e) {
+                System.err.println("   ❌ Failed to save video: " + e.getMessage());
+            }
+        }
+    }
+
+    // ==========================================
     // ⚙️ CORE ACTIONS
     // ==========================================
     private void initWait() {
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5));
-        wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+        wait = new WebDriverWait(driver, Duration.ofSeconds(15));
     }
 
     public void quit() {
@@ -85,7 +145,10 @@ public class ActionLibrary {
         }
     }
 
-    public void navigate(String url) { driver.get(url); }
+    public void navigate(String url) {
+        System.out.println("   ➡️ Navigating to: " + url);
+        driver.get(url);
+    }
 
     public void tap(String locator) {
         System.out.println("   👆 Tapping: " + locator);
@@ -112,18 +175,20 @@ public class ActionLibrary {
         if (raw.startsWith("id=")) return By.id(raw.substring(3));
         if (raw.startsWith("xpath=")) return By.xpath(raw.substring(6));
         if (raw.startsWith("accessId=")) return AppiumBy.accessibilityId(raw.substring(9));
-        return By.xpath(raw);
+        return By.xpath(raw); // Default to xpath
     }
 
     // ==========================================
-    // 🔔 SLACK NOTIFICATION (ENV VAR)
+    // 🔔 SLACK NOTIFICATION
     // ==========================================
     public void sendSlackNotification(String message) {
-        // 1. READ FROM ENVIRONMENT VARIABLE
-        String webhookUrl = System.getenv("SLACK_WEBHOOK_URL");
+        String webhookUrl = (configProps != null) ? configProps.getProperty("slack.webhook.url") : null;
+        if (webhookUrl == null || webhookUrl.isEmpty()) {
+            webhookUrl = System.getenv("SLACK_WEBHOOK_URL");
+        }
 
         if (webhookUrl == null || webhookUrl.isEmpty()) {
-            System.err.println("   ⚠️ Slack Skipped: Env Var 'SLACK_WEBHOOK_URL' is missing.");
+            System.out.println("   ⚠️ Slack Skipped: URL not found.");
             return;
         }
 
@@ -139,11 +204,10 @@ public class ActionLibrary {
                 os.write(jsonPayload.getBytes("UTF-8"));
             }
 
-            int responseCode = conn.getResponseCode();
-            if (responseCode == 200) {
+            if (conn.getResponseCode() == 200) {
                 System.out.println("   🔔 Slack Notification Sent!");
             } else {
-                System.err.println("   ❌ Slack Failed: Code " + responseCode);
+                System.err.println("   ❌ Slack Failed: Code " + conn.getResponseCode());
             }
         } catch (Exception e) {
             System.err.println("   ❌ Slack Error: " + e.getMessage());

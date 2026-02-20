@@ -1,4 +1,6 @@
 {
   "HomeTabButton": "xpath=//XCUIElementTypeButton[@name='Home Tab']",
-  "HomeTabButton_Fast": "accessId=Home Tab"
+  "B2B_Icon": "xpath=//XCUIElementTypeStaticText[@label='B2B']",
+
+  "B2B_Icon_Fast": "accessId=B2B"
 }

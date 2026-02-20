@@ -1,5 +1,11 @@
-# Step 1: Wait for 5 seconds to let the app fully load and reach the Home Page
+# Step 1: Wait for the app to fully load
 Wait for 5
 
-# Step 2: Tap on the Home Tab button using the locator from the JSON file
+# Step 2: Navigate to the Home Tab
 Tap on HomeTabButton
+
+# Step 3: Wait for the Home screen UI and animations to settle
+Wait for 2
+
+# Step 4: Click on the B2B section
+Tap on B2B_Icon
