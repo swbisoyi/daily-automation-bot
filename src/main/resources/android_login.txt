@@ -1,0 +1,11 @@
+# Step 1: Give the Android app time to install and load its UI
+Wait for 8
+
+# Step 2: Click the Home Tab
+Tap on HomeTabButton
+
+# Step 3: Wait for animations
+Wait for 2
+
+# Step 4: Click B2B
+Tap on B2B_Icon

@@ -10,15 +10,17 @@ import java.util.stream.Collectors;
 
 public class Engine {
 
-    // 🧠 CONFIGURATION: Toggle your tests here
     static final List<TestConfig> TEST_CONFIGS = Arrays.asList(
             // 🌐 WEB TESTS
-            // new TestConfig("HotKeySelect.json", "HotKeySelect.txt", "WEB"),
-            // new TestConfig("login.json", "login.txt", "WEB"),
-            // new TestConfig("page_objects.json", "test_scenario.txt", "WEB"),
+             new TestConfig("HotKeySelect.json", "HotKeySelect.txt", "WEB"),
+             new TestConfig("login.json", "login.txt", "WEB"),
+             new TestConfig("page_objects.json", "test_scenario.txt", "WEB")
 
             // 📱 iOS REAL DEVICE TEST
-            new TestConfig("ios_login.json", "ios_login.txt", "IOS_REAL_DEVICE")
+//            new TestConfig("ios_login.json", "ios_login.txt", "IOS_REAL_DEVICE")
+
+            // 🤖 Android Emulator
+//            new TestConfig("android_login.json", "android_login.txt", "ANDROID")
     );
 
     public static void main(String[] args) {
@@ -37,7 +39,6 @@ public class Engine {
             System.out.println("--------------------------------------------------");
             System.out.println("🧵 Starting Scenario: " + config.scenarioFile + " [" + config.platform + "]");
 
-            // 1. Load Data
             ObjectMapper mapper = new ObjectMapper();
             JsonNode pageObjects;
             try (InputStream is = Engine.class.getClassLoader().getResourceAsStream(config.jsonFile)) {
@@ -53,80 +54,44 @@ public class Engine {
                 }
             }
 
-            // 2. Launch Driver
+            // 🚀 THE LAUNCHER
             if (config.platform.equalsIgnoreCase("WEB")) {
                 actionLib.openBrowser();
             } else if (config.platform.equalsIgnoreCase("IOS_REAL_DEVICE")) {
                 actionLib.openIOSRealDevice();
-            } else if (config.platform.equalsIgnoreCase("IOS_SIMULATOR")) {
-                actionLib.openIOSSimulator();
+            } else if (config.platform.equalsIgnoreCase("ANDROID")) {
+                actionLib.openAndroidDevice();
             }
 
-            // 🎥 3. START RECORDING
             actionLib.startRecording();
 
-            // 4. Execute Steps
             for (String step : steps) {
                 if (step.trim().isEmpty() || step.startsWith("#") || step.startsWith("//")) continue;
-
                 currentStep = step.trim();
                 executeStep(actionLib, pageObjects, currentStep);
             }
 
-            // ✅ SUCCESS
             String msg = "✅ PASSED: " + config.scenarioFile;
             System.out.println(msg);
             actionLib.sendSlackNotification(msg);
 
         } catch (Exception e) {
-            // 🚨 FAILURE
             String msg = "🚨 FAILED: " + config.scenarioFile + " | Step: [" + currentStep + "]\nError: " + e.getMessage();
             System.err.println(msg);
             actionLib.sendSlackNotification(msg);
         } finally {
-            // 🎥 5. STOP RECORDING & SAVE
             actionLib.stopRecording(config.scenarioFile);
-
             actionLib.quit();
         }
     }
 
     public static void executeStep(ActionLibrary lib, JsonNode pageObjects, String step) throws Exception {
-        // Skip explicit browser opening
-        if (step.equalsIgnoreCase("Open Browser")) {
-            System.out.println("   ℹ️ Skipping 'Open Browser' step (Already launched)");
-            return;
-        }
-
-        if (step.startsWith("Navigate to")) {
-            lib.navigate(step.substring(12).trim());
-            return;
-        }
-
-        if (step.startsWith("Wait for")) {
-            lib.waitFor(Integer.parseInt(step.replaceAll("\\D", "")));
-            return;
-        }
-
-        if (step.startsWith("Tap on") || step.startsWith("Click on")) {
-            String obj = step.replace("Tap on", "").replace("Click on", "").trim();
-            lib.tap(getObj(pageObjects, obj));
-            return;
-        }
-
-        if (step.startsWith("Type")) {
-            String text = step.split(" in ")[0].substring(5);
-            String obj = step.split(" in ")[1].trim();
-            lib.type(text, getObj(pageObjects, obj));
-            return;
-        }
-
-        if (step.startsWith("Verify")) {
-            String obj = step.substring(7).replace(" is visible", "").trim();
-            lib.verifyVisible(getObj(pageObjects, obj));
-            return;
-        }
-
+        if (step.equalsIgnoreCase("Open Browser")) return;
+        if (step.startsWith("Navigate to")) { lib.navigate(step.substring(12).trim()); return; }
+        if (step.startsWith("Wait for")) { lib.waitFor(Integer.parseInt(step.replaceAll("\\D", ""))); return; }
+        if (step.startsWith("Tap on") || step.startsWith("Click on")) { lib.tap(getObj(pageObjects, step.replace("Tap on", "").replace("Click on", "").trim())); return; }
+        if (step.startsWith("Type")) { lib.type(step.split(" in ")[0].substring(5), getObj(pageObjects, step.split(" in ")[1].trim())); return; }
+        if (step.startsWith("Verify")) { lib.verifyVisible(getObj(pageObjects, step.substring(7).replace(" is visible", "").trim())); return; }
         throw new Exception("Unknown Command: " + step);
     }
 

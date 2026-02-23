@@ -1,0 +1,4 @@
+{
+  "HomeTabButton": "xpath=//android.widget.TextView[@text='Home']",
+  "B2B_Icon": "xpath=//android.widget.TextView[@text='B2B']"
+}
