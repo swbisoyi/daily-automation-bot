@@ -14,7 +14,7 @@ import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.android.options.UiAutomator2Options;
 import io.appium.java_client.screenrecording.CanRecordScreen;
 
-// Monte Media Imports (For Web Video)
+// Monte Media Imports
 import org.monte.media.Format;
 import org.monte.media.math.Rational;
 import org.monte.screenrecorder.ScreenRecorder;
@@ -90,33 +90,59 @@ public class ActionLibrary {
     }
 
     // ==========================================
-    // 🤖 3. ANDROID SETUP (Emulator with PIN)
+    // 🤖 3a. ANDROID EMULATOR SETUP
     // ==========================================
-    public void openAndroidDevice() throws Exception {
+    public void openAndroidEmulator() throws Exception {
         System.out.println("   🤖 Connecting to Android Emulator...");
         UiAutomator2Options options = new UiAutomator2Options();
         options.setPlatformName("Android");
         options.setAutomationName("UiAutomator2");
         options.setDeviceName("emulator-5554");
 
-        // 📦 Auto-installs and launches your APK
         options.setApp("/Users/swagatkumarbisoyi/Desktop/JustdialAndroid.apk");
 
-        // 🔐 UNLOCK CREDENTIALS
+        // Emulator PIN logic
         options.setUnlockType("pin");
         options.setUnlockKey("1234");
 
-        options.setAutoGrantPermissions(true); // Auto-accepts Location/Camera popups
-        options.setNoReset(false); // Installs a fresh copy of the APK
+        options.setAutoGrantPermissions(true);
+        options.setNoReset(false);
         options.setNewCommandTimeout(Duration.ofSeconds(60));
 
         driver = new AndroidDriver(new URL("http://127.0.0.1:4723/"), options);
         initWait();
-        System.out.println("   🚀 Android App Launched!");
     }
 
     // ==========================================
-    // 🎥 4. VIDEO RECORDING (Unified & Mac-Optimized)
+    // 📱 3b. ANDROID REAL DEVICE SETUP
+    // ==========================================
+    public void openAndroidRealDevice() throws Exception {
+        System.out.println("   📱 Connecting to Physical Android Device...");
+        UiAutomator2Options options = new UiAutomator2Options();
+        options.setPlatformName("Android");
+        options.setAutomationName("UiAutomator2");
+        options.setDeviceName("Android Device");
+
+        options.setApp("/Users/swagatkumarbisoyi/Desktop/JustdialAndroid.apk");
+
+        // 🎯 EXPLICITLY DEFINE THE PACKAGE & ACTIVITY
+        options.setAppPackage("com.justdial.search");
+        options.setAppActivity("com.justdial.search.SplashScreenNewActivity");
+
+        // 🚀 Tell Appium to accept ANY Justdial screen that successfully loads
+        options.setAppWaitActivity("com.justdial.search.*");
+
+        options.setAutoGrantPermissions(true);
+        options.setNoReset(true);
+        options.setNewCommandTimeout(Duration.ofSeconds(60));
+
+        driver = new AndroidDriver(new URL("http://127.0.0.1:4723/"), options);
+        initWait();
+        System.out.println("   🚀 Android App Launched on Real Device!");
+    }
+
+    // ==========================================
+    // 🎥 4. VIDEO RECORDING (Optimized for Mac)
     // ==========================================
     public void startRecording() {
         try {
@@ -157,7 +183,6 @@ public class ActionLibrary {
                 Files.write(rawFile.toPath(), decodedVideo);
 
                 System.out.println("   🔄 Optimizing Mobile Video for QuickTime...");
-                // -pix_fmt yuv420p is the magic flag for Mac compatibility
                 ProcessBuilder pb = new ProcessBuilder("ffmpeg", "-y", "-i", rawFile.getAbsolutePath(), "-c:v", "libx264", "-pix_fmt", "yuv420p", "-preset", "fast", finalFile.getAbsolutePath());
                 pb.redirectErrorStream(true).start().waitFor();
 
@@ -165,7 +190,6 @@ public class ActionLibrary {
                     rawFile.delete();
                     System.out.println("   ✅ Mobile Video saved: " + finalFile.getAbsolutePath());
                 }
-
             } else if (screenRecorder != null) {
                 System.out.println("   💾 Stopping Web recording...");
                 screenRecorder.stop();
@@ -177,7 +201,6 @@ public class ActionLibrary {
                     if (aviFile.exists()) aviFile.delete();
                     createdFiles.get(0).renameTo(aviFile);
 
-                    System.out.println("   🔄 Converting Web Video to MP4...");
                     ProcessBuilder pb = new ProcessBuilder("ffmpeg", "-y", "-i", aviFile.getAbsolutePath(), "-c:v", "libx264", "-pix_fmt", "yuv420p", "-preset", "fast", mp4File.getAbsolutePath());
                     pb.redirectErrorStream(true).start().waitFor();
 
