@@ -14,7 +14,7 @@ public class Engine {
             // 🌐 WEB TESTS
 //             new TestConfig("HotKeySelect.json", "HotKeySelect.txt", "WEB"),
 //             new TestConfig("login.json", "login.txt", "WEB"),
-//             new TestConfig("page_objects.json", "test_scenario.txt", "WEB")
+             new TestConfig("page_objects.json", "test_scenario.txt", "WEB")
 
             // 📱 iOS REAL DEVICE TEST
 //            new TestConfig("ios_login.json", "ios_login.txt", "IOS_REAL_DEVICE")
@@ -22,8 +22,9 @@ public class Engine {
             // 🤖 Android Emulator
 //            new TestConfig("android_login.json", "android_login.txt", "ANDROID")
             // 📱 Android Real Device
-            new TestConfig("android_login.json", "android_login.txt", "ANDROID_REAL_DEVICE")
-
+//            new TestConfig("android_login.json", "android_login.txt", "ANDROID_REAL_DEVICE")
+            // 📱🌐 Mobile Web (Chrome Emulation)
+//            new TestConfig("mweb_login.json", "mweb_login.txt", "MWEB")
     );
 
     public static void main(String[] args) {
@@ -57,9 +58,11 @@ public class Engine {
                 }
             }
 
-            // 🚀 THE MULTI-PLATFORM LAUNCHER
+            // 🚀 THE OMNI-PLATFORM LAUNCHER
             if (config.platform.equalsIgnoreCase("WEB")) {
                 actionLib.openBrowser();
+            } else if (config.platform.equalsIgnoreCase("MWEB")) {
+                actionLib.openMobileWeb();
             } else if (config.platform.equalsIgnoreCase("IOS_REAL_DEVICE")) {
                 actionLib.openIOSRealDevice();
             } else if (config.platform.equalsIgnoreCase("ANDROID_EMULATOR")) {

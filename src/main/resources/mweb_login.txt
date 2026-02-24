@@ -1,0 +1,6 @@
+Navigate to https://www.justdial.com
+Wait for 2
+
+# Type something in the search box
+Type Restaurant in SearchBox
+Wait for 1

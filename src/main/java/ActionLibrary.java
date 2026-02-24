@@ -33,7 +33,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 public class ActionLibrary {
@@ -54,13 +56,29 @@ public class ActionLibrary {
     }
 
     // ==========================================
-    // 🌐 1. WEB SETUP
+    // 🌐 1a. DESKTOP WEB SETUP
     // ==========================================
     public void openBrowser() {
-        System.out.println("   🌐 Launching Chrome...");
+        System.out.println("   🌐 Launching Chrome Desktop...");
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--remote-allow-origins=*");
         options.addArguments("--start-maximized");
+        driver = new ChromeDriver(options);
+        initWait();
+    }
+
+    // ==========================================
+    // 📱🌐 1b. MOBILE WEB SETUP (Chrome Emulation)
+    // ==========================================
+    public void openMobileWeb() {
+        System.out.println("   📱🌐 Launching Chrome in Mobile View (iPhone 12 Pro)...");
+        Map<String, String> mobileEmulation = new HashMap<>();
+        mobileEmulation.put("deviceName", "iPhone 12 Pro");
+
+        ChromeOptions options = new ChromeOptions();
+        options.setExperimentalOption("mobileEmulation", mobileEmulation);
+        options.addArguments("--remote-allow-origins=*");
+
         driver = new ChromeDriver(options);
         initWait();
     }
@@ -98,13 +116,10 @@ public class ActionLibrary {
         options.setPlatformName("Android");
         options.setAutomationName("UiAutomator2");
         options.setDeviceName("emulator-5554");
-
         options.setApp("/Users/swagatkumarbisoyi/Desktop/JustdialAndroid.apk");
 
-        // Emulator PIN logic
         options.setUnlockType("pin");
         options.setUnlockKey("1234");
-
         options.setAutoGrantPermissions(true);
         options.setNoReset(false);
         options.setNewCommandTimeout(Duration.ofSeconds(60));
@@ -124,13 +139,9 @@ public class ActionLibrary {
         options.setDeviceName("Android Device");
 
         options.setApp("/Users/swagatkumarbisoyi/Desktop/JustdialAndroid.apk");
-
-        // 🎯 EXPLICITLY DEFINE THE PACKAGE & ACTIVITY
         options.setAppPackage("com.justdial.search");
         options.setAppActivity("com.justdial.search.SplashScreenNewActivity");
-
-        // 🚀 Tell Appium to accept ANY Justdial screen that successfully loads
-        options.setAppWaitActivity("com.justdial.search.*");
+        options.setAppWaitActivity("com.justdial.search.*"); // Bypass splash screen timing issues
 
         options.setAutoGrantPermissions(true);
         options.setNoReset(true);
@@ -138,11 +149,10 @@ public class ActionLibrary {
 
         driver = new AndroidDriver(new URL("http://127.0.0.1:4723/"), options);
         initWait();
-        System.out.println("   🚀 Android App Launched on Real Device!");
     }
 
     // ==========================================
-    // 🎥 4. VIDEO RECORDING (Optimized for Mac)
+    // 🎥 4. VIDEO RECORDING (Optimized for Mac QuickTime)
     // ==========================================
     public void startRecording() {
         try {
@@ -150,7 +160,7 @@ public class ActionLibrary {
                 System.out.println("   🎥 Started Mobile Screen Recording...");
                 ((CanRecordScreen) driver).startRecordingScreen();
             } else {
-                System.out.println("   🎥 Started Web Desktop Recording...");
+                System.out.println("   🎥 Started Web/MWeb Desktop Recording...");
                 GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration();
                 File targetFolder = new File("target/");
                 if (!targetFolder.exists()) targetFolder.mkdirs();
@@ -172,6 +182,7 @@ public class ActionLibrary {
     public void stopRecording(String scenarioName) {
         try {
             if (driver instanceof CanRecordScreen) {
+                // 📱 MOBILE LOGIC
                 System.out.println("   💾 Stopping Mobile recording...");
                 String base64Video = ((CanRecordScreen) driver).stopRecordingScreen();
                 byte[] decodedVideo = Base64.getDecoder().decode(base64Video);
@@ -183,30 +194,64 @@ public class ActionLibrary {
                 Files.write(rawFile.toPath(), decodedVideo);
 
                 System.out.println("   🔄 Optimizing Mobile Video for QuickTime...");
+                // Note: Mobile screens are already even dimensions, so it rarely fails here.
                 ProcessBuilder pb = new ProcessBuilder("ffmpeg", "-y", "-i", rawFile.getAbsolutePath(), "-c:v", "libx264", "-pix_fmt", "yuv420p", "-preset", "fast", finalFile.getAbsolutePath());
-                pb.redirectErrorStream(true).start().waitFor();
+                Process p = pb.redirectErrorStream(true).start();
+                try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(p.getInputStream()))) {
+                    while (reader.readLine() != null) {}
+                }
+                p.waitFor();
 
-                if (finalFile.exists()) {
+                if (finalFile.exists() && finalFile.length() > 0) {
                     rawFile.delete();
                     System.out.println("   ✅ Mobile Video saved: " + finalFile.getAbsolutePath());
                 }
+
             } else if (screenRecorder != null) {
-                System.out.println("   💾 Stopping Web recording...");
+                // 🌐 WEB & MWEB LOGIC
+                System.out.println("   💾 Stopping Web/MWeb recording...");
+                Thread.sleep(1000); // Give Monte a second to flush frames
                 screenRecorder.stop();
+
                 List<File> createdFiles = screenRecorder.getCreatedMovieFiles();
-                if (!createdFiles.isEmpty()) {
+                if (createdFiles != null && !createdFiles.isEmpty()) {
+                    File sourceAvi = createdFiles.get(0);
                     File aviFile = new File("target/" + scenarioName.replace(".txt", "") + "_WEB_Video.avi");
                     File mp4File = new File("target/" + scenarioName.replace(".txt", "") + "_WEB_Video.mp4");
 
                     if (aviFile.exists()) aviFile.delete();
-                    createdFiles.get(0).renameTo(aviFile);
+                    if (mp4File.exists()) mp4File.delete();
 
-                    ProcessBuilder pb = new ProcessBuilder("ffmpeg", "-y", "-i", aviFile.getAbsolutePath(), "-c:v", "libx264", "-pix_fmt", "yuv420p", "-preset", "fast", mp4File.getAbsolutePath());
-                    pb.redirectErrorStream(true).start().waitFor();
+                    Files.move(sourceAvi.toPath(), aviFile.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 
-                    if (mp4File.exists()) {
-                        aviFile.delete();
+                    System.out.println("   🔄 Converting Web Video to QuickTime MP4...");
+
+                    // THE FIX: Added the scale filter to force even-numbered dimensions
+                    ProcessBuilder pb = new ProcessBuilder(
+                            "ffmpeg", "-y", "-i", aviFile.getAbsolutePath(),
+                            "-vf", "scale=trunc(iw/2)*2:trunc(ih/2)*2", // <--- MAGIC PIXEL FIX
+                            "-c:v", "libx264", "-pix_fmt", "yuv420p", "-preset", "fast",
+                            mp4File.getAbsolutePath()
+                    );
+                    Process p = pb.redirectErrorStream(true).start();
+
+                    // Capture FFmpeg logs just in case it crashes
+                    StringBuilder ffmpegLogs = new StringBuilder();
+                    try (java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.InputStreamReader(p.getInputStream()))) {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            ffmpegLogs.append(line).append("\n");
+                        }
+                    }
+                    p.waitFor();
+
+                    if (mp4File.exists() && mp4File.length() > 0) {
+                        aviFile.delete(); // Cleanup AVI only if MP4 succeeded
                         System.out.println("   ✅ Web Video saved: " + mp4File.getAbsolutePath());
+                    } else {
+                        System.err.println("   ❌ MP4 Conversion failed. FFmpeg Error Log:");
+                        System.err.println(ffmpegLogs.toString()); // Print exactly why it failed!
+                        System.err.println("   💾 Original AVI kept at: " + aviFile.getAbsolutePath());
                     }
                 }
             }
@@ -232,6 +277,7 @@ public class ActionLibrary {
 
     private By getLocator(String raw) {
         if (raw.startsWith("id=")) return By.id(raw.substring(3));
+        if (raw.startsWith("name=")) return By.name(raw.substring(5)); // 👈 ADD THIS LINE
         if (raw.startsWith("xpath=")) return By.xpath(raw.substring(6));
         if (raw.startsWith("accessId=")) return AppiumBy.accessibilityId(raw.substring(9));
         return By.xpath(raw);
