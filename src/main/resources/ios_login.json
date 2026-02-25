@@ -1,6 +1,12 @@
 {
-  "HomeTabButton": "xpath=//XCUIElementTypeButton[@name='Home Tab']",
-  "B2B_Icon": "xpath=//XCUIElementTypeStaticText[@label='B2B']",
-
-  "B2B_Icon_Fast": "accessId=B2B"
+  "ProfileButton": "xpath=//XCUIElementTypeButton[@name=\"Profile\"]",
+  "SignInButton": "xpath=//XCUIElementTypeButton[@name=\"Sign In\"]",
+  "MobileNumberField": "xpath=//XCUIElementTypeTextField[@name=\"Mobile Number\"]",
+  "LoginWithOTPButton": "xpath=//XCUIElementTypeButton[@name=\"Login with OTP\"]",
+  "OTP_1": "xpath=//XCUIElementTypeTextField[@name=\"OTP 1st digit\"]",
+  "OTP_2": "xpath=//XCUIElementTypeTextField[@name=\"OTP 2nd digit\"]",
+  "OTP_3": "xpath=//XCUIElementTypeTextField[@name=\"OTP 3rd digit\"]",
+  "OTP_4": "xpath=//XCUIElementTypeTextField[@name=\"OTP 4th digit\"]",
+  "OTP_5": "xpath=//XCUIElementTypeTextField[@name=\"OTP 5th digit\"]",
+  "OTP_6": "xpath=//XCUIElementTypeTextField[@name=\"OTP 6th digit\"]"
 }

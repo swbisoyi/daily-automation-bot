@@ -102,7 +102,8 @@ public class ActionLibrary {
         options.setCapability("appium:wdaLocalPort", 8102);
         options.setNoReset(true);
         options.setNewCommandTimeout(Duration.ofSeconds(60));
-
+        // 🚀 THE FIX: Tell Appium to auto-accept any iOS system popups (Notifications/Location)
+        options.setCapability("appium:autoAcceptAlerts", true);
         driver = new IOSDriver(new URL("http://127.0.0.1:4723/"), options);
         initWait();
     }

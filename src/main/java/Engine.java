@@ -14,10 +14,10 @@ public class Engine {
             // 🌐 WEB TESTS
 //             new TestConfig("HotKeySelect.json", "HotKeySelect.txt", "WEB"),
 //             new TestConfig("login.json", "login.txt", "WEB"),
-             new TestConfig("page_objects.json", "test_scenario.txt", "WEB")
+//             new TestConfig("page_objects.json", "test_scenario.txt", "WEB")
 
             // 📱 iOS REAL DEVICE TEST
-//            new TestConfig("ios_login.json", "ios_login.txt", "IOS_REAL_DEVICE")
+            new TestConfig("ios_login.json", "ios_login.txt", "IOS_REAL_DEVICE")
 
             // 🤖 Android Emulator
 //            new TestConfig("android_login.json", "android_login.txt", "ANDROID")

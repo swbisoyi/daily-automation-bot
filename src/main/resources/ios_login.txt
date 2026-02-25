@@ -1,11 +1,27 @@
-# Step 1: Wait for the app to fully load
+# Give the Justdial iOS app a few seconds to fully launch
 Wait for 5
 
-# Step 2: Navigate to the Home Tab
-Tap on HomeTabButton
-
-# Step 3: Wait for the Home screen UI and animations to settle
+# Navigate to Login Screen
+Tap on ProfileButton
+Wait for 2
+Tap on SignInButton
 Wait for 2
 
-# Step 4: Click on the B2B section
-Tap on B2B_Icon
+# Enter Mobile Number and Request OTP
+Type 9987996046 in MobileNumberField
+Wait for 1
+Tap on LoginWithOTPButton
+
+# Wait for the OTP screen and SMS to arrive
+Wait for 5
+
+# Enter the 6-digit OTP (e.g., 123456)
+Type 1 in OTP_1
+Type 2 in OTP_2
+Type 3 in OTP_3
+Type 4 in OTP_4
+Type 5 in OTP_5
+Type 6 in OTP_6
+
+# Wait a few seconds to observe the login success
+Wait for 5
