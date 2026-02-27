@@ -1,0 +1,5 @@
+{
+  "BeautyHotkey": "xpath=//XCUIElementTypeCell[@name='Beauty hotkey, Item 5 of 15)']/XCUIElementTypeOther",
+  "BeautyClinic": "xpath=//XCUIElementTypeCell[@name='Beauty Clinic']/XCUIElementTypeOther/XCUIElementTypeImage",
+  "TenthClinicResult": "xpath=//XCUIElementTypeWindow/XCUIElementTypeOther[2]/XCUIElementTypeOther/XCUIElementTypeOther/XCUIElementTypeOther[1]/XCUIElementTypeOther/XCUIElementTypeOther/XCUIElementTypeOther[1]/XCUIElementTypeOther/XCUIElementTypeOther/XCUIElementTypeTable/XCUIElementTypeCell[10]"
+}

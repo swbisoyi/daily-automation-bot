@@ -1,0 +1,11 @@
+# Give the app a moment to load
+Wait for 5
+
+# Navigate through the Beauty categories
+Tap on BeautyHotkey
+Wait for 2
+Tap on BeautyClinic
+Wait for 3
+
+# Select the 10th clinic in the search results
+Tap on TenthClinicResult

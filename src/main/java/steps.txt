@@ -1,0 +1,8 @@
+Tap on AnyButton
+Wait for 2
+Tap on AnyButton
+Wait for 2
+Tap on AnyButton
+Wait for 2
+Tap on AnyButton
+Wait for 2

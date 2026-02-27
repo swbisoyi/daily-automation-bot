@@ -18,6 +18,7 @@ public class Engine {
 
             // 📱 iOS REAL DEVICE TEST
             new TestConfig("ios_login.json", "ios_login.txt", "IOS_REAL_DEVICE")
+//            new TestConfig("ios_beauty_flow.json", "ios_beauty_flow.txt", "IOS_REAL_DEVICE")
 
             // 🤖 Android Emulator
 //            new TestConfig("android_login.json", "android_login.txt", "ANDROID")

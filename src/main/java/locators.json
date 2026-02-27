@@ -1,0 +1,4 @@
+{
+  "TableView": "xpath=//XCUIElementTypeTable",
+  "AnyButton": "xpath=//XCUIElementTypeButton[@name=\\"
+}
